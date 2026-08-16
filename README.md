@@ -17,7 +17,7 @@ This module incorporates code and inspiration from [MMM-OpenWeatherForecast](htt
 ## Installation
 
 1. Navigate into your MagicMirror `modules` folder and execute<br>
-   `git clone https://github.com/supermem613/MMM-NOAAForecast.git`.
+   `git clone https://github.com/bl8demast3r/MMM-NOAAForecast.git`.
 2. Enter the new `MMM-NOAAForecast` directory and execute `npm install`.
 
 ## Configuration
