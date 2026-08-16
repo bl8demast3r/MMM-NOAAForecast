@@ -26,46 +26,132 @@
     {# -------------- Extra Current Conditions -------------- #}
     {% if config.showExtraCurrentConditions %}
       <div class="extra-current-conditions-wrapper small bright">
-        <span class="temperature-container">
-          <span class="high-temperature">{{ forecast.currently.tempRange.high }}</span>
-          <span class="temperature-separator dimmed">/</span>
-          <span class="low-temperature">{{ forecast.currently.tempRange.low }}</span>
-        </span>
 
-        {% if config.showPrecipitation %}
+        {# Row 1: High/Low Temp, Wind, Precipitation #}
+        {% if config.extraCurrentConditions.highLowTemp or (config.extraCurrentConditions.wind and config.showWind) or (config.extraCurrentConditions.precipitation and config.showPrecipitation and forecast.currently.precipitation.accumulation) %}
+          <div class="extra-conditions-row main-extras">
+            {% if config.extraCurrentConditions.highLowTemp %}
+              <span class="temperature-container">
+                <span class="high-temperature">{{ forecast.currently.tempRange.high }}</span>
+                <span class="temperature-separator dimmed">/</span>
+                <span class="low-temperature">{{ forecast.currently.tempRange.low }}</span>
+              </span>
+            {% endif %}
 
-          <span class="precipitation-container">
-            {% if forecast.currently.precipitation.accumulation %}
-              {% if (config.showInlineIcons) %}
-                {% if forecast.currently.precipitation.accumulationType == "rain" %}
-                  <img class="inline-icon rain" src="{{ inlineIcons.rain }}" />
+            {% if config.extraCurrentConditions.wind and config.showWind %}
+              <span class="wind-container">
+                {% if (config.showInlineIcons) %}
+                  <img class="inline-icon wind-icon" src="{{ inlineIcons.wind }}" />
                 {% endif %}
-                {% if forecast.currently.precipitation.accumulationType == "snow" %}
-                  <img class="inline-icon snow" src="{{ inlineIcons.snow }}" />
+                <span class="wind-speed">{{ forecast.currently.wind.windSpeed }}</span>
+                {% if forecast.currently.wind.windGust %}
+                  <span class="wind-gusts">{{ forecast.currently.wind.windGust }}</span>
                 {% endif %}
+              </span>
+            {% endif %}
+
+            {% if config.extraCurrentConditions.precipitation and config.showPrecipitation %}
+              {% if forecast.currently.precipitation.accumulation %}
+                <span class="precipitation-container">
+                  {% if (config.showInlineIcons) %}
+                    {% if forecast.currently.precipitation.accumulationType == "rain" %}
+                      <img class="inline-icon rain" src="{{ inlineIcons.rain }}" />
+                    {% endif %}
+                    {% if forecast.currently.precipitation.accumulationType == "snow" %}
+                      <img class="inline-icon snow" src="{{ inlineIcons.snow }}" />
+                    {% endif %}
+                  {% endif %}
+                  <span class="pop">{{ forecast.currently.precipitation.accumulation }}</span>
+                </span>
               {% endif %}
-              <span class="pop">{{ forecast.currently.precipitation.accumulation }}</span>
             {% endif %}
-          </span>
-
+          </div>
         {% endif %}
 
-        {% if config.showWind %}
-          <span class="wind-container">
-            {% if (config.showInlineIcons) %}
-              <img class="inline-icon wind-icon" src="{{ inlineIcons.wind }}" />
+        {# Row 2: Humidity, Dew Point, Visibility, Pressure, UV #}
+        {% if (config.extraCurrentConditions.humidity and forecast.currently.humidity) or
+              (config.extraCurrentConditions.dewPoint and forecast.currently.dewPoint) or
+              (config.extraCurrentConditions.visibility and forecast.currently.visibility) or
+              (config.extraCurrentConditions.barometricPressure and forecast.currently.barometricPressure) or
+              (config.extraCurrentConditions.uvIndex and forecast.currently.uvIndex) %}
+          <div class="extra-conditions-row atmospheric-extras">
+            {% if config.extraCurrentConditions.humidity and forecast.currently.humidity %}
+              <span class="humidity-container">
+                {% if (config.showInlineIcons) %}
+                  <img class="inline-icon humidity-icon" src="{{ inlineIcons.humidity }}" />
+                {% endif %}
+                <span class="humidity-label">{{ config.label_humidity }}</span>
+                <span class="humidity-value">{{ forecast.currently.humidity }}</span>
+              </span>
             {% endif %}
 
-            <span class="wind-speed">{{ forecast.currently.wind.windSpeed }}</span>
-
-            {% if forecast.currently.wind.windGust %}
-              <span class="wind-gusts">{{ forecast.currently.wind.windGust }}</span>
+            {% if config.extraCurrentConditions.dewPoint and forecast.currently.dewPoint %}
+              <span class="dewpoint-container">
+                {% if (config.showInlineIcons) %}
+                  <img class="inline-icon dewpoint-icon" src="{{ inlineIcons.dewPoint }}" />
+                {% endif %}
+                <span class="dewpoint-label">{{ config.label_dewPoint }}</span>
+                <span class="dewpoint-value">{{ forecast.currently.dewPoint }}</span>
+              </span>
             {% endif %}
 
-          </span>
+            {% if config.extraCurrentConditions.visibility and forecast.currently.visibility %}
+              <span class="visibility-container">
+                {% if (config.showInlineIcons) %}
+                  <img class="inline-icon visibility-icon" src="{{ inlineIcons.visibility }}" />
+                {% endif %}
+                <span class="visibility-label">{{ config.label_visibility }}</span>
+                <span class="visibility-value">{{ forecast.currently.visibility }}</span>
+              </span>
+            {% endif %}
 
+            {% if config.extraCurrentConditions.barometricPressure and forecast.currently.barometricPressure %}
+              <span class="pressure-container">
+                {% if (config.showInlineIcons) %}
+                  <img class="inline-icon pressure-icon" src="{{ inlineIcons.barometricPressure }}" />
+                {% endif %}
+                <span class="pressure-label">{{ config.label_barometricPressure }}</span>
+                <span class="pressure-value">{{ forecast.currently.barometricPressure }}</span>
+              </span>
+            {% endif %}
+
+            {% if config.extraCurrentConditions.uvIndex and forecast.currently.uvIndex %}
+              <span class="uv-container">
+                {% if (config.showInlineIcons) %}
+                  <img class="inline-icon uv-icon" src="{{ inlineIcons.uvIndex }}" />
+                {% endif %}
+                <span class="uv-label">{{ config.label_uvIndex }}</span>
+                <span class="uv-value">{{ forecast.currently.uvIndex }}</span>
+              </span>
+            {% endif %}
+          </div>
         {% endif %}
 
+        {# Row 3: Dedicated line for Sunrise and Sunset together #}
+        {% if (config.extraCurrentConditions.sunrise and forecast.currently.sunrise) or
+              (config.extraCurrentConditions.sunset and forecast.currently.sunset) %}
+          <div class="extra-conditions-row sun-extras">
+            {% if config.extraCurrentConditions.sunrise and forecast.currently.sunrise %}
+              <span class="sunrise-container">
+                {% if (config.showInlineIcons) %}
+                  <img class="inline-icon sunrise-icon" src="{{ inlineIcons.sunrise }}" />
+                {% endif %}
+                <span class="sunrise-label">{{ config.label_sunrise }}</span>
+                <span class="sunrise-value">{{ forecast.currently.sunrise }}</span>
+              </span>
+            {% endif %}
+
+            {% if config.extraCurrentConditions.sunset and forecast.currently.sunset %}
+              <span class="sunset-container">
+                {% if (config.showInlineIcons) %}
+                  <img class="inline-icon sunset-icon" src="{{ inlineIcons.sunset }}" />
+                {% endif %}
+                <span class="sunset-label">{{ config.label_sunset }}</span>
+                <span class="sunset-value">{{ forecast.currently.sunset }}</span>
+              </span>
+            {% endif %}
+          </div>
+        {% endif %}
 
       </div>
     {% endif %}
@@ -112,119 +198,121 @@
 
         {# Hourly #}
         {% if config.showHourlyForecast %}
-
-
-          {% for h in forecast.hourly %}
-            <div class="forecast-item hourly{% if h.isFirst %} next-upcoming{% endif %}">
-              <span class="time">{{ h.time }}</span>
-              <span class="forecast-icon-container">
-              {% if h.animatedIconId %}
-                <canvas class="skycon-{{ identifier }} forecast-icon" data-animated-icon-name="{{ h.animatedIconName }}" id="{{ h.animatedIconId }}" width="{{ animatedIconSizes.forecast }}" height="{{ animatedIconSizes.forecast }}"></canvas>
-              {% else %}
-                <img class="forecast-icon" src="{{ h.iconPath }}" />
-              {% endif %}
-              </span>
-              <span class="temperature small">{{ h.temperature }}</span>
-
-              {% if config.showPrecipitation %}
-
-                <span class="precipitation-container">
-                  {% if h.precipitation.accumulationType == "snow" %}
-                    <img class="inline-icon snow" src="{{ inlineIcons.snow }}" />
-                  {% else %}
-                    <img class="inline-icon rain" src="{{ inlineIcons.rain }}" />
-                  {% endif %}
-                    <span class="pop precipitation-pop">{{ h.precipitation.pop }}</span>
-                  {% if h.precipitation.accumulation %}
-                    <span class="accumulation precipitation-accumulation dimmed">{{ h.precipitation.accumulation }}</span>
-                  {% endif %}
+          <div class="forecast-row hourly-forecast">
+            {% for h in forecast.hourly %}
+              <div class="forecast-item hourly{% if h.isFirst %} next-upcoming{% endif %}">
+                <span class="time">{{ h.time }}</span>
+                <span class="forecast-icon-container">
+                {% if h.animatedIconId %}
+                  <canvas class="skycon-{{ identifier }} forecast-icon" data-animated-icon-name="{{ h.animatedIconName }}" id="{{ h.animatedIconId }}" width="{{ animatedIconSizes.forecast }}" height="{{ animatedIconSizes.forecast }}"></canvas>
+                {% else %}
+                  <img class="forecast-icon" src="{{ h.iconPath }}" />
+                {% endif %}
                 </span>
+                <span class="temperature small">{{ h.temperature }}</span>
 
-              {% endif %}
+                {% if config.showPrecipitation %}
+                  <span class="precipitation-container">
+                    {% if h.precipitation.accumulationType == "snow" %}
+                      <img class="inline-icon snow" src="{{ inlineIcons.snow }}" />
+                    {% else %}
+                      <img class="inline-icon rain" src="{{ inlineIcons.rain }}" />
+                    {% endif %}
+                      <span class="pop precipitation-pop">{{ h.precipitation.pop }}</span>
+                    {% if h.precipitation.accumulation %}
+                      <span class="accumulation precipitation-accumulation dimmed">{{ h.precipitation.accumulation }}</span>
+                    {% endif %}
+                  </span>
+                {% endif %}
 
-              {% if config.showWind %}
-                <span class="wind-container">
-                  {% if (config.showInlineIcons and config.forecastLayout == "tiled" ) %}
-                    <img class="inline-icon wind-icon" src="{{ inlineIcons.wind }}" />
-                  {% endif %}
+                {% if config.showWind %}
+                  <span class="wind-container">
+                    {% if (config.showInlineIcons and config.forecastLayout == "tiled" ) %}
+                      <img class="inline-icon wind-icon" src="{{ inlineIcons.wind }}" />
+                    {% endif %}
 
-                  <span class="wind-speed">{{ h.wind.windSpeed }}</span>
+                    <span class="wind-speed">{{ h.wind.windSpeed }}</span>
 
-                  {% if h.wind.windGust %}
-                    <span class="wind-gusts">{{ h.wind.windGust }}</span>
-                  {% endif %}
+                    {% if h.wind.windGust %}
+                      <span class="wind-gusts">{{ h.wind.windGust }}</span>
+                    {% endif %}
+                  </span>
+                {% endif %}
 
-                </span>
-
-              {% endif %}
-
-            </div>
-          {% endfor %}
-
+              </div>
+            {% endfor %}
+          </div>
         {% endif %}
-
 
         {# Daily #}
         {% if config.showDailyForecast %}
-
-
-          {% for d in forecast.daily %}
-            <div class="forecast-item daily{% if d.isToday %} today{% endif %}">
-              <span class="day-name">{{ d.day }}</span>
-              <span class="forecast-icon-container">
-              {% if d.animatedIconId %}
-                <canvas class="skycon-{{ identifier }} forecast-icon" data-animated-icon-name="{{ d.animatedIconName }}" id="{{ d.animatedIconId }}" width="{{ animatedIconSizes.forecast }}" height="{{ animatedIconSizes.forecast }}"></canvas>
-              {% else %}
-                <img class="forecast-icon" src="{{ d.iconPath }}" />
-              {% endif %}
-              </span>
-              <span class="temperature-container small">
-                <span class="high-temperature">{{ d.tempRange.high }}</span>
-                <span class="temperature-separator dimmed">/</span>
-                <span class="low-temperature">{{ d.tempRange.low }}</span>
-              </span>
-
-              {% if config.showPrecipitation %}
-
-                <span class="precipitation-container">
-
-                  {% if d.precipitation.accumulationType == "snow" %}
-                    <img class="inline-icon snow" src="{{ inlineIcons.snow }}" />
-                  {% else %}
-                    <img class="inline-icon rain" src="{{ inlineIcons.rain }}" />
-                  {% endif %}
-
-                  <span class="pop precipitation-pop">{{ d.precipitation.pop }}</span>
-
-                  {% if d.precipitation.accumulation %}
-                    <span class="accumulation precipitation-accumulation dimmed">{{ d.precipitation.accumulation }}</span>
-                  {% endif %}
-
+          <div class="forecast-row daily-forecast">
+            {% for d in forecast.daily %}
+              <div class="forecast-item daily{% if d.isToday %} today{% endif %}">
+                <span class="day-name">{{ d.day }}</span>
+                <span class="forecast-icon-container">
+                {% if d.animatedIconId %}
+                  <canvas class="skycon-{{ identifier }} forecast-icon" data-animated-icon-name="{{ d.animatedIconName }}" id="{{ d.animatedIconId }}" width="{{ animatedIconSizes.forecast }}" height="{{ animatedIconSizes.forecast }}"></canvas>
+                {% else %}
+                  <img class="forecast-icon" src="{{ d.iconPath }}" />
+                {% endif %}
+                </span>
+                <span class="temperature-container small">
+                  <span class="high-temperature">{{ d.tempRange.high }}</span>
+                  <span class="temperature-separator dimmed">/</span>
+                  <span class="low-temperature">{{ d.tempRange.low }}</span>
                 </span>
 
-              {% endif %}
+                {% if config.showPrecipitation %}
+                  <span class="precipitation-container">
+                    {% if d.precipitation.accumulationType == "snow" %}
+                      <img class="inline-icon snow" src="{{ inlineIcons.snow }}" />
+                    {% else %}
+                      <img class="inline-icon rain" src="{{ inlineIcons.rain }}" />
+                    {% endif %}
 
-              {% if config.showWind %}
-                <span class="wind-container">
-                  {% if (config.showInlineIcons and config.forecastLayout == "tiled" ) %}
-                    <img class="inline-icon wind-icon" src="{{ inlineIcons.wind }}" />
-                  {% endif %}
+                    <span class="pop precipitation-pop">{{ d.precipitation.pop }}</span>
 
-                  <span class="wind-speed">{{ d.wind.windSpeed }}</span>
+                    {% if d.precipitation.accumulation %}
+                      <span class="accumulation precipitation-accumulation dimmed">{{ d.precipitation.accumulation }}</span>
+                    {% endif %}
+                  </span>
+                {% endif %}
 
-                  {% if d.wind.windGust %}
-                    <span class="wind-gusts">{{ d.wind.windGust }}</span>
-                  {% endif %}
+                {% if config.showWind %}
+                  <span class="wind-container">
+                    {% if (config.showInlineIcons and config.forecastLayout == "tiled" ) %}
+                      <img class="inline-icon wind-icon" src="{{ inlineIcons.wind }}" />
+                    {% endif %}
 
-                </span>
+                    <span class="wind-speed">{{ d.wind.windSpeed }}</span>
 
-              {% endif %}
+                    {% if d.wind.windGust %}
+                      <span class="wind-gusts">{{ d.wind.windGust }}</span>
+                    {% endif %}
+                  </span>
+                {% endif %}
 
-            </div>
-          {% endfor %}
-
+              </div>
+            {% endfor %}
+          </div>
         {% endif %}
 
+      </div>
+    {% endif %}
+
+    {# -------------- Attribution & Last Update -------------- #}
+    {% if config.showAttribution %}
+      <div class="attribution small dimmed">
+        {% if config.showLastUpdate %}
+          {% if config.showCurrentConditionsLastUpdate and forecast.currentConditionsLastUpdate %}
+            <span class="last-update current-conditions-update">{{ config.label_currentConditionsUpdate }} {{ forecast.currentConditionsLastUpdate }} &bull; </span>
+          {% endif %}
+          {% if config.showForecastLastUpdate and forecast.forecastLastUpdate %}
+            <span class="last-update forecast-update">{{ config.label_forecastUpdate }} {{ forecast.forecastLastUpdate }} &bull; </span>
+          {% endif %}
+        {% endif %}
+        <span class="attribution-text">{{ config.attributionText }}</span>
       </div>
     {% endif %}
 

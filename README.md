@@ -66,7 +66,32 @@ Find out your latitude and longitude here:
     </tr>
     <tr>
       <td><code>showExtraCurrentConditions</code></td>
-      <td>Whether to show additional current conditions such as high/low temperatures, precipitation and wind speed.<br><br><strong>Type</strong> <code>Boolean</code><br>Defaults to <code>true</code></td>
+      <td>Whether to show additional current conditions such as high/low temperatures, precipitation, wind speed, humidity, dew point, sunrise, sunset, etc.<br><br><strong>Type</strong> <code>Boolean</code><br>Defaults to <code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>extraCurrentConditions</code></td>
+      <td>An object allowing you to fine-tune individual extra conditions to show/hide:<br>
+      <code>{ highLowTemp: true, precipitation: true, sunrise: true, sunset: true, wind: true, barometricPressure: false, humidity: true, dewPoint: true, uvIndex: false, visibility: false }</code><br><br><strong>Type</strong> <code>Object</code></td>
+    </tr>
+    <tr>
+      <td><code>showAttribution</code></td>
+      <td>Whether to display the attribution and last updated time at the bottom right.<br><br><strong>Type</strong> <code>Boolean</code><br>Defaults to <code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>showLastUpdate</code></td>
+      <td>Whether to include update timestamps in the attribution footer.<br><br><strong>Type</strong> <code>Boolean</code><br>Defaults to <code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>showCurrentConditionsLastUpdate</code></td>
+      <td>Whether to show the timestamp for when the latest live current conditions observation was recorded.<br><br><strong>Type</strong> <code>Boolean</code><br>Defaults to <code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>showForecastLastUpdate</code></td>
+      <td>Whether to show the timestamp for when the official NWS forecast model was published for this location.<br><br><strong>Type</strong> <code>Boolean</code><br>Defaults to <code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>attributionText</code></td>
+      <td>Text displayed in the attribution line.<br><br><strong>Type</strong> <code>String</code><br>Defaults to <code>"Powered by weather.gov"</code></td>
     </tr>
     <tr>
       <td><code>showSummary</code></td>
@@ -155,6 +180,22 @@ Find out your latitude and longitude here:
     <tr>
       <td><code>label_timeFormat</code></td>
       <td>How you want the time formatted for hourly forecast display.  Accepts any valid moment.js format (https://momentjs.com/docs/#/displaying/format/). For example, specify short 24h format with <code>"k[h]"</code> (e.g.: <code>14h</code>)<br><br><strong>Type</strong> <code>String</code><br>Defaults to <code>"h a"</code> (e.g.: <code>9 am</code>)</td>
+    </tr>
+    <tr>
+      <td><code>label_sunTimeFormat</code></td>
+      <td>How you want Sunrise and Sunset formatted.<br><br><strong>Type</strong> <code>String</code><br>Defaults to <code>"h:mm a"</code> (e.g.: <code>6:05 am</code>)</td>
+    </tr>
+    <tr>
+      <td><code>label_lastUpdateTimeFormat</code></td>
+      <td>How you want the update timestamps formatted.<br><br><strong>Type</strong> <code>String</code><br>Defaults to <code>"h:mm a"</code> (e.g.: <code>9:51 pm</code>)</td>
+    </tr>
+    <tr>
+      <td><code>label_currentConditionsUpdate</code></td>
+      <td>Label for the latest current conditions / weather station observation timestamp.<br><br><strong>Type</strong> <code>String</code><br>Defaults to <code>"Current Conditions Updated"</code></td>
+    </tr>
+    <tr>
+      <td><code>label_forecastUpdate</code></td>
+      <td>Label for the forecast package publication timestamp.<br><br><strong>Type</strong> <code>String</code><br>Defaults to <code>"Forecast Updated"</code></td>
     </tr>
     <tr>
       <td><code>label_days</code></td>

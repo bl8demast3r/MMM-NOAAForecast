@@ -17,6 +17,18 @@ Module.register("MMM-NOAAForecast", {
     requestDelay: 0,
     showCurrentConditions: true,
     showExtraCurrentConditions: true,
+    extraCurrentConditions: {
+      highLowTemp: true,
+      precipitation: true,
+      sunrise: true,
+      sunset: true,
+      wind: true,
+      barometricPressure: false,
+      humidity: true,
+      dewPoint: true,
+      uvIndex: false,
+      visibility: false
+    },
     showSummary: true,
     forecastHeaderText: "",
     showForecastTableColumnHeaderIcons: true,
@@ -32,6 +44,11 @@ Module.register("MMM-NOAAForecast", {
     showWind: true,
     showFeelsLike: true,
     showPrecipitationStartStop: false,
+    showAttribution: true,
+    showLastUpdate: true,
+    showCurrentConditionsLastUpdate: true,
+    showForecastLastUpdate: true,
+    attributionText: "Powered by weather.gov",
     iconset: "1c",
     mainIconset: "1c",
     useAnimatedIcons: true,
@@ -47,6 +64,18 @@ Module.register("MMM-NOAAForecast", {
     label_high: "H",
     label_low: "L",
     label_timeFormat: "h a",
+    label_sunTimeFormat: "h:mm a",
+    label_lastUpdateTimeFormat: "h:mm a",
+    label_humidity: "Humidity",
+    label_dewPoint: "Dew Point",
+    label_sunrise: "Sunrise",
+    label_sunset: "Sunset",
+    label_barometricPressure: "Pressure",
+    label_uvIndex: "UV Index",
+    label_visibility: "Visibility",
+    label_lastUpdate: "Updated",
+    label_currentConditionsUpdate: "Current Conditions Updated",
+    label_forecastUpdate: "Forecast Updated",
     label_days: ["Sun", "Mon", "Tue", "Wed", "Thur", "Fri", "Sat"],
     label_ordinals: [
       "N",
@@ -101,7 +130,14 @@ Module.register("MMM-NOAAForecast", {
       inlineIcons: {
         rain: this.generateIconSrc("i-rain"),
         snow: this.generateIconSrc("i-snow"),
-        wind: this.generateIconSrc("i-wind")
+        wind: this.generateIconSrc("i-wind"),
+        humidity: this.generateIconSrc("i-humidity"),
+        dewPoint: this.generateIconSrc("i-dewpoint"),
+        sunrise: this.generateIconSrc("i-sunrise"),
+        sunset: this.generateIconSrc("i-sunset"),
+        barometricPressure: this.generateIconSrc("i-pressure"),
+        uvIndex: this.generateIconSrc("i-uv"),
+        visibility: this.generateIconSrc("i-visibility")
       },
       animatedIconSizes: {
         main: this.config.mainIconSize,
@@ -171,6 +207,23 @@ Module.register("MMM-NOAAForecast", {
       "animatedIconPlayDelay"
     ]);
 
+    //sanitize extraCurrentConditions
+    if (
+      typeof this.config.extraCurrentConditions !== "object" ||
+      this.config.extraCurrentConditions === null
+    ) {
+      this.config.extraCurrentConditions = Object.assign(
+        {},
+        this.defaults.extraCurrentConditions
+      );
+    } else {
+      this.config.extraCurrentConditions = Object.assign(
+        {},
+        this.defaults.extraCurrentConditions,
+        this.config.extraCurrentConditions
+      );
+    }
+
     //force icon set to mono version whern config.coloured = false
     if (this.config.colored === false) {
       this.config.iconset = this.config.iconset.replace("c", "m");
@@ -186,6 +239,82 @@ Module.register("MMM-NOAAForecast", {
         self.getData();
       }, self.config.updateInterval * 60 * 1000); //convert to milliseconds
     }, this.config.requestDelay);
+  },
+
+  /*
+    Calculates Sunrise and Sunset times given latitude, longitude, and date.
+    Uses SunCalc if available, or a precise astronomical calculation fallback.
+  */
+  calculateSunTimes: function (latitude, longitude, targetDate) {
+    var lat = parseFloat(latitude);
+    var lon = parseFloat(longitude);
+    if (isNaN(lat) || isNaN(lon)) {
+      return { sunrise: null, sunset: null };
+    }
+
+    var d = targetDate ? new Date(targetDate) : new Date();
+
+    try {
+      if (typeof SunCalc !== "undefined" && SunCalc.getTimes) {
+        var times = SunCalc.getTimes(d, lat, lon);
+        return {
+          sunrise: times.sunrise,
+          sunset: times.sunset
+        };
+      }
+    } catch (e) {
+      // ignore and fallback
+    }
+
+    // NOAA Solar Calculations formula approximation
+    var rad = Math.PI / 180;
+    var deg = 180 / Math.PI;
+    var startOfYear = new Date(d.getFullYear(), 0, 0);
+    var diff = d - startOfYear;
+    var dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+    var lngHour = lon / 15;
+
+    function calcSunTime(isSunrise) {
+      var t = isSunrise
+        ? dayOfYear + (6 - lngHour) / 24
+        : dayOfYear + (18 - lngHour) / 24;
+      var M = 0.9856 * t - 3.289;
+      var L =
+        M +
+        1.916 * Math.sin(M * rad) +
+        0.02 * Math.sin(2 * M * rad) +
+        282.634;
+      L = ((L % 360) + 360) % 360;
+      var RA = deg * Math.atan(0.91764 * Math.tan(L * rad));
+      RA = ((RA % 360) + 360) % 360;
+      var Lquadrant = Math.floor(L / 90) * 90;
+      var RAquadrant = Math.floor(RA / 90) * 90;
+      RA = RA + (Lquadrant - RAquadrant);
+      RA = RA / 15;
+      var sinDec = 0.39782 * Math.sin(L * rad);
+      var cosDec = Math.cos(Math.asin(sinDec));
+      var cosH =
+        (Math.cos(90.833 * rad) - sinDec * Math.sin(lat * rad)) /
+        (cosDec * Math.cos(lat * rad));
+      if (cosH > 1 || cosH < -1) return null;
+      var H = isSunrise
+        ? (360 - deg * Math.acos(cosH)) / 15
+        : (deg * Math.acos(cosH)) / 15;
+      var T = H + RA - 0.06571 * t - 6.622;
+      var UT = (T - lngHour) % 24;
+      if (UT < 0) UT += 24;
+      var hours = Math.floor(UT);
+      var minutes = Math.floor((UT - hours) * 60);
+      var seconds = Math.floor(((UT - hours) * 60 - minutes) * 60);
+      var res = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      res.setUTCHours(hours, minutes, seconds);
+      return res;
+    }
+
+    return {
+      sunrise: calcSunTime(true),
+      sunset: calcSunTime(false)
+    };
   },
 
   getData: function () {
@@ -209,10 +338,57 @@ Module.register("MMM-NOAAForecast", {
 
       //process weather data
       this.dataRefreshTimeStamp = moment().format("x");
+      var parsedForecast =
+        typeof payload.payload.forecast === "string"
+          ? JSON.parse(payload.payload.forecast)
+          : payload.payload.forecast;
+      var parsedHourly =
+        typeof payload.payload.forecastHourly === "string"
+          ? JSON.parse(payload.payload.forecastHourly)
+          : payload.payload.forecastHourly;
+      var parsedGrid =
+        typeof payload.payload.forecastGridData === "string"
+          ? JSON.parse(payload.payload.forecastGridData)
+          : payload.payload.forecastGridData;
+
+      var parsedObservation =
+        typeof payload.payload.observation === "string"
+          ? JSON.parse(payload.payload.observation)
+          : payload.payload.observation;
+
+      var observationTime =
+        parsedObservation &&
+        parsedObservation.properties &&
+        parsedObservation.properties.timestamp;
+
+      var generatedAt =
+        (parsedHourly &&
+          parsedHourly.properties &&
+          parsedHourly.properties.generatedAt) ||
+        (parsedForecast &&
+          parsedForecast.properties &&
+          parsedForecast.properties.generatedAt);
+
+      var updateTime =
+        (parsedForecast &&
+          parsedForecast.properties &&
+          parsedForecast.properties.updateTime) ||
+        (parsedHourly &&
+          parsedHourly.properties &&
+          parsedHourly.properties.updateTime) ||
+        (parsedGrid &&
+          parsedGrid.properties &&
+          parsedGrid.properties.updateTime) ||
+        moment().toISOString();
+
       this.weatherData = {
-        daily: JSON.parse(payload.payload.forecast).properties.periods,
-        hourly: JSON.parse(payload.payload.forecastHourly).properties.periods,
-        grid: JSON.parse(payload.payload.forecastGridData).properties
+        daily: parsedForecast ? parsedForecast.properties.periods : [],
+        hourly: parsedHourly ? parsedHourly.properties.periods : [],
+        grid: parsedGrid ? parsedGrid.properties : {},
+        updateTime: updateTime,
+        generatedAt: generatedAt,
+        observationTime: observationTime,
+        observation: parsedObservation
       };
 
       this.preProcessWeatherData();
@@ -908,7 +1084,7 @@ Module.register("MMM-NOAAForecast", {
       var displayCounter = 0;
       var currentIndex = this.config.hourlyForecastInterval;
       while (displayCounter < this.config.maxHourliesToShow) {
-        if (this.weatherData.hourly[currentIndex] === null) {
+        if (!this.weatherData.hourly || !this.weatherData.hourly[currentIndex]) {
           break;
         }
 
@@ -948,7 +1124,7 @@ Module.register("MMM-NOAAForecast", {
 
       var dailiesShows = 0;
       for (i; i < this.weatherData.daily.length; i++) {
-        if (this.weatherData.daily[i] === null) {
+        if (!this.weatherData.daily[i]) {
           break;
         }
 
@@ -973,6 +1149,161 @@ Module.register("MMM-NOAAForecast", {
     }
 
     var precipitationChange = this.analyzePrecipitationChange();
+
+    // Calculate Sunrise & Sunset
+    var sunTimes = this.calculateSunTimes(
+      this.config.latitude,
+      this.config.longitude
+    );
+    var sunriseFormatted =
+      sunTimes && sunTimes.sunrise
+        ? moment(sunTimes.sunrise).format(
+            this.config.label_sunTimeFormat || "h:mm a"
+          )
+        : null;
+    var sunsetFormatted =
+      sunTimes && sunTimes.sunset
+        ? moment(sunTimes.sunset).format(
+            this.config.label_sunTimeFormat || "h:mm a"
+          )
+        : null;
+
+    // Humidity
+    var humidityVal = null;
+    if (
+      this.weatherData.hourly &&
+      this.weatherData.hourly[0] &&
+      this.weatherData.hourly[0].relativeHumidity &&
+      this.weatherData.hourly[0].relativeHumidity.value !== null &&
+      typeof this.weatherData.hourly[0].relativeHumidity.value !== "undefined"
+    ) {
+      humidityVal = Math.round(
+        this.weatherData.hourly[0].relativeHumidity.value
+      );
+    } else if (this.weatherData.hourly && this.weatherData.hourly[0]) {
+      var gridHum = this.getGridValueWithinDuration(
+        this.weatherData.hourly[0].startTime,
+        "relativeHumidity"
+      );
+      if (gridHum !== undefined && gridHum !== null && !isNaN(gridHum)) {
+        humidityVal = Math.round(parseFloat(gridHum));
+      }
+    }
+    var humidityFormatted = humidityVal !== null ? `${humidityVal}%` : null;
+
+    // Dew Point
+    var dewPointVal = null;
+    if (
+      this.weatherData.hourly &&
+      this.weatherData.hourly[0] &&
+      this.weatherData.hourly[0].dewpoint &&
+      this.weatherData.hourly[0].dewpoint.value !== null &&
+      typeof this.weatherData.hourly[0].dewpoint.value !== "undefined"
+    ) {
+      var rawDp = this.weatherData.hourly[0].dewpoint.value;
+      // NOAA hourly dewpoint is Celsius
+      var convertedDp =
+        this.config.units === "metric" ? rawDp : (rawDp * 9) / 5 + 32;
+      dewPointVal = Math.round(convertedDp);
+    } else if (this.weatherData.hourly && this.weatherData.hourly[0]) {
+      var gridDp = this.getGridValueWithinDuration(
+        this.weatherData.hourly[0].startTime,
+        "dewpoint"
+      );
+      if (gridDp !== undefined && gridDp !== null && !isNaN(gridDp)) {
+        dewPointVal = Math.round(parseFloat(gridDp));
+      }
+    }
+    var dewPointFormatted = dewPointVal !== null ? `${dewPointVal}°` : null;
+
+    // Barometric Pressure
+    var pressureFormatted = null;
+    if (this.weatherData.hourly && this.weatherData.hourly[0]) {
+      var gridPressure =
+        this.getGridValueWithinDuration(
+          this.weatherData.hourly[0].startTime,
+          "seaLevelPressure"
+        ) ||
+        this.getGridValueWithinDuration(
+          this.weatherData.hourly[0].startTime,
+          "pressure"
+        );
+      if (
+        gridPressure !== undefined &&
+        gridPressure !== null &&
+        !isNaN(gridPressure)
+      ) {
+        var pNum = parseFloat(gridPressure);
+        if (this.config.units === "imperial") {
+          // If Pa, convert to inHg
+          var inHg = pNum > 2000 ? pNum / 3386.389 : pNum * 0.02953;
+          pressureFormatted = `${inHg.toFixed(2)} inHg`;
+        } else {
+          // If Pa, convert to hPa
+          var hPa = pNum > 2000 ? Math.round(pNum / 100) : Math.round(pNum);
+          pressureFormatted = `${hPa} hPa`;
+        }
+      }
+    }
+
+    // UV Index
+    var uvFormatted = null;
+    if (this.weatherData.hourly && this.weatherData.hourly[0]) {
+      var uvVal = this.getGridValueWithinDuration(
+        this.weatherData.hourly[0].startTime,
+        "uvIndex"
+      );
+      if (uvVal !== undefined && uvVal !== null && !isNaN(uvVal)) {
+        uvFormatted = `${Math.round(parseFloat(uvVal))}`;
+      }
+    }
+
+    // Visibility
+    var visFormatted = null;
+    if (this.weatherData.hourly && this.weatherData.hourly[0]) {
+      var gridVis = this.getGridValueWithinDuration(
+        this.weatherData.hourly[0].startTime,
+        "visibility"
+      );
+      if (gridVis !== undefined && gridVis !== null && !isNaN(gridVis)) {
+        var vMeters = parseFloat(gridVis);
+        if (this.config.units === "imperial") {
+          var miles = Math.round((vMeters / 1609.344) * 10) / 10;
+          visFormatted = `${miles} mi`;
+        } else {
+          var km = Math.round((vMeters / 1000) * 10) / 10;
+          visFormatted = `${km} km`;
+        }
+      }
+    }
+
+    // Current Conditions Last Update Time (from station observation or hourly generation)
+    var currentConditionsUpdateFormatted = null;
+    var rawObsTimestamp =
+      (this.weatherData && this.weatherData.observationTime) ||
+      (this.weatherData && this.weatherData.generatedAt);
+    if (rawObsTimestamp) {
+      var obsMoment = moment(rawObsTimestamp);
+      if (obsMoment.isValid()) {
+        currentConditionsUpdateFormatted = obsMoment.format(
+          this.config.label_lastUpdateTimeFormat || "h:mm a"
+        );
+      }
+    }
+
+    // Forecast Last Update Time (from NWS forecast office package publication)
+    var forecastUpdateFormatted = null;
+    var rawForecastTimestamp =
+      (this.weatherData && this.weatherData.updateTime) ||
+      (this.weatherData && this.weatherData.generatedAt);
+    if (rawForecastTimestamp) {
+      var forecastMoment = moment(rawForecastTimestamp);
+      if (forecastMoment.isValid()) {
+        forecastUpdateFormatted = forecastMoment.format(
+          this.config.label_lastUpdateTimeFormat || "h:mm a"
+        );
+      }
+    }
 
     return {
       currently: {
@@ -1001,12 +1332,22 @@ Module.register("MMM-NOAAForecast", {
           this.weatherData.hourly[0].windSpeed,
           this.weatherData.hourly[0].windDirection,
           this.weatherData.hourly[0].windGust
-        )
+        ),
+        humidity: humidityFormatted,
+        dewPoint: dewPointFormatted,
+        sunrise: sunriseFormatted,
+        sunset: sunsetFormatted,
+        barometricPressure: pressureFormatted,
+        uvIndex: uvFormatted,
+        visibility: visFormatted
       },
       summary: summary,
       precipitationChange: precipitationChange,
       hourly: hourlies,
-      daily: dailies
+      daily: dailies,
+      currentConditionsLastUpdate: currentConditionsUpdateFormatted,
+      forecastLastUpdate: forecastUpdateFormatted,
+      lastUpdate: forecastUpdateFormatted
     };
   },
 

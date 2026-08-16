@@ -151,12 +151,38 @@ describe("getTemplateData Tests", () => {
       expect(result.inlineIcons.wind).toContain("i-wind");
     });
 
+    it("should include extra conditions inline icon paths", () => {
+      const result = module.getTemplateData();
+
+      expect(result.inlineIcons.humidity).toBeDefined();
+      expect(result.inlineIcons.humidity).toContain("i-humidity");
+
+      expect(result.inlineIcons.dewPoint).toBeDefined();
+      expect(result.inlineIcons.dewPoint).toContain("i-dewpoint");
+
+      expect(result.inlineIcons.sunrise).toBeDefined();
+      expect(result.inlineIcons.sunrise).toContain("i-sunrise");
+
+      expect(result.inlineIcons.sunset).toBeDefined();
+      expect(result.inlineIcons.sunset).toContain("i-sunset");
+
+      expect(result.inlineIcons.barometricPressure).toBeDefined();
+      expect(result.inlineIcons.barometricPressure).toContain("i-pressure");
+
+      expect(result.inlineIcons.uvIndex).toBeDefined();
+      expect(result.inlineIcons.uvIndex).toContain("i-uv");
+
+      expect(result.inlineIcons.visibility).toBeDefined();
+      expect(result.inlineIcons.visibility).toContain("i-visibility");
+    });
+
     it("should use configured iconset for inline icons", () => {
       module.config.iconset = "2m";
 
       const result = module.getTemplateData();
 
       expect(result.inlineIcons.rain).toContain("2m");
+      expect(result.inlineIcons.humidity).toContain("2m");
     });
   });
 

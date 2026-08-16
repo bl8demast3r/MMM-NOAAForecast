@@ -416,4 +416,45 @@ describe("Process Weather Data Pipeline Tests", () => {
       }
     });
   });
+
+  // ============================================================================
+  // Extra Current Conditions and Sun Times Tests
+  // ============================================================================
+  describe("Extra current conditions and sun calculations", () => {
+    beforeEach(() => {
+      module.weatherData = createBaseWeatherData();
+      module.config.latitude = "40.7128";
+      module.config.longitude = "-74.0060";
+    });
+
+    it("should calculate humidity and dew point", () => {
+      module.weatherData.hourly[0].relativeHumidity = { value: 65 };
+      module.weatherData.hourly[0].dewpoint = { value: 15 }; // 15C -> ~59F
+
+      const result = module.processWeatherData();
+
+      expect(result.currently.humidity).toBe("65%");
+      expect(result.currently.dewPoint).toBe("59°");
+    });
+
+    it("should calculate sunrise and sunset times", () => {
+      const sunTimes = module.calculateSunTimes("40.7128", "-74.0060", new Date("2026-06-21T12:00:00Z"));
+
+      expect(sunTimes.sunrise).toBeDefined();
+      expect(sunTimes.sunset).toBeDefined();
+      expect(sunTimes.sunrise instanceof Date).toBe(true);
+      expect(sunTimes.sunset instanceof Date).toBe(true);
+    });
+
+    it("should include sunrise, sunset, and lastUpdate in processWeatherData result", () => {
+      module.weatherData.updateTime = "2026-08-15T21:30:00-04:00";
+
+      const result = module.processWeatherData();
+
+      expect(result.currently.sunrise).toBeDefined();
+      expect(result.currently.sunset).toBeDefined();
+      expect(result.lastUpdate).toBeDefined();
+      expect(result.lastUpdate).toContain("pm");
+    });
+  });
 });

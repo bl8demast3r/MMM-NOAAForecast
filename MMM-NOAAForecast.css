@@ -37,10 +37,11 @@
 }
 
 .MMM-NOAAForecast .attribution {
-  font-size: 10px;
+  font-size: 11px;
   line-height: 16px;
-  color: #333;
+  color: #777;
   text-align: right;
+  margin-top: 10px;
 }
 
 /* Current Conditions */
@@ -87,13 +88,21 @@
 }
 
 .MMM-NOAAForecast .extra-current-conditions-wrapper {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  margin: 8px 0;
+  text-align: right;
+}
 
-  /* text-align: left; */
-
-  /* background-color: #333; */
-  word-wrap: normal;
-  margin: 0 -15px;
+.MMM-NOAAForecast .extra-current-conditions-wrapper .extra-conditions-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px 16px;
+  width: 100%;
 }
 
 /* Inline icons */
@@ -105,22 +114,24 @@
   .forecast-item
   .inline-icon {
   display: inline-block;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   margin-right: 0;
-  vertical-align: bottom;
+  vertical-align: middle;
   position: relative;
 }
 
-/* Extra Current Conditions */
+/* Extra Current Conditions Containers */
 
-.MMM-NOAAForecast .extra-current-conditions-wrapper .temperature-container,
-.MMM-NOAAForecast .extra-current-conditions-wrapper .precipitation-container,
-.MMM-NOAAForecast .extra-current-conditions-wrapper .wind-container {
-  display: inline-block;
+.MMM-NOAAForecast .extra-current-conditions-wrapper span[class$="-container"] {
+  display: inline-flex;
+  align-items: center;
   white-space: nowrap;
-  margin: 0 15px;
-  margin-bottom: 10px;
+  gap: 4px;
+}
+
+.MMM-NOAAForecast .extra-current-conditions-wrapper span[class$="-label"] {
+  margin-right: 2px;
 }
 
 /* Summary */
@@ -142,18 +153,27 @@
 
 .MMM-NOAAForecast .wrapper.tiled .forecast-container {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 0 30px;
+}
+
+.MMM-NOAAForecast .wrapper.tiled .forecast-container .forecast-row {
+  display: flex;
   flex-flow: row wrap;
   justify-content: flex-start;
   align-content: flex-start;
   align-items: flex-start;
-  margin-bottom: 0 30px;
+  width: 100%;
 }
 
 .MMM-NOAAForecast .wrapper.tiled .forecast-container .forecast-item {
-  flex-grow: 1;
-  flex-shrink: 1;
-  min-width: 100px;
-  padding: 10px 5px;
+  flex: 0 0 33.3333%;
+  max-width: 33.3333%;
+  width: 33.3333%;
+  min-width: 0;
+  padding: 10px 4px;
+  box-sizing: border-box;
 }
 
 .MMM-NOAAForecast .wrapper.tiled .forecast-container * {
@@ -310,6 +330,10 @@
   line-height: 1;
 }
 
+.MMM-NOAAForecast .wrapper.table .forecast-container .forecast-row {
+  display: table-row-group;
+}
+
 .MMM-NOAAForecast .wrapper.table .forecast-container .forecast-item,
 .MMM-NOAAForecast .wrapper.table .forecast-container .header-row {
   display: table-row;
@@ -425,7 +449,7 @@
   width: 30px;
   height: 30px;
   display: block;
-  vertical-align: middle;
+  margin: 0 auto;
 }
 
 .MMM-NOAAForecast .wrapper.table .forecast-container .forecast-item .time,

@@ -26,7 +26,10 @@ module.exports = NodeHelper.create({
       var self = this;
       // use a browser-like User-Agent for requests
       var needleOptions = {
-        follow_max: 3
+        follow_max: 3,
+        headers: {
+          "User-Agent": "MMM-NOAAForecast (MagicMirror/2.0)"
+        }
       };
 
       if (
@@ -61,7 +64,18 @@ module.exports = NodeHelper.create({
                 { key: "forecastGridData", url: properties.forecastGridData }
               ];
 
+              var totalRequests = forecastUrls.length + (properties.observationStations ? 1 : 0);
               var completedRequests = 0;
+
+              function checkComplete() {
+                completedRequests++;
+                if (completedRequests >= totalRequests) {
+                  self.sendSocketNotification("NOAA_CALL_FORECAST_DATA", {
+                    instanceId: payload.instanceId,
+                    payload: forecastData
+                  });
+                }
+              }
 
               forecastUrls.forEach(function (item) {
                 needle.get(item.url, needleOptions, function (err, res, data) {
@@ -75,16 +89,31 @@ module.exports = NodeHelper.create({
                       )} ** ERROR ** Failed to get ${item.key}: ${err}`
                     );
                   }
-
-                  completedRequests++;
-                  if (completedRequests === forecastUrls.length) {
-                    self.sendSocketNotification("NOAA_CALL_FORECAST_DATA", {
-                      instanceId: payload.instanceId,
-                      payload: forecastData
-                    });
-                  }
+                  checkComplete();
                 });
               });
+
+              if (properties.observationStations) {
+                needle.get(properties.observationStations, needleOptions, function (sErr, sRes, sData) {
+                  if (!sErr && sRes.statusCode === 200) {
+                    var sBody = typeof sData === "string" ? JSON.parse(sData) : sData;
+                    var firstStation = sBody && sBody.features && sBody.features[0] ? sBody.features[0].id : null;
+                    if (firstStation) {
+                      needle.get(`${firstStation}/observations/latest`, needleOptions, function (oErr, oRes, oData) {
+                        if (!oErr && oRes.statusCode === 200) {
+                          forecastData["observation"] = typeof oData === "string" ? JSON.parse(oData) : oData;
+                          console.log(`[MMM-NOAAForecast] Getting observation: ${firstStation}/observations/latest`);
+                        }
+                        checkComplete();
+                      });
+                    } else {
+                      checkComplete();
+                    }
+                  } else {
+                    checkComplete();
+                  }
+                });
+              }
             } else {
               console.log(
                 `[MMM-NOAAForecast] ${moment().format(
