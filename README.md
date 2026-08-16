@@ -1,5 +1,8 @@
 # MMM-NOAAForecast
 
+> [!WARNING]
+> **Disclaimer:** All edits and feature additions in this repository fork were implemented with the assistance of Google Gemini. Please use with caution and test thoroughly in your own setup.
+
 This a module for <strong>MagicMirror²</strong><br>
 https://magicmirror.builders/<br>
 https://github.com/MichMich/MagicMirror
