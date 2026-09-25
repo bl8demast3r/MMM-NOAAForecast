@@ -30,6 +30,8 @@ Module.register("MMM-NOAAForecast", {
       visibility: false
     },
     showSummary: true,
+    showAlerts: true,
+    maxAlertsToShow: 0,
     forecastHeaderText: "",
     showForecastTableColumnHeaderIcons: true,
     showHourlyForecast: true,
@@ -201,6 +203,7 @@ Module.register("MMM-NOAAForecast", {
       "hourlyForecastInterval",
       "maxHourliesToShow",
       "maxDailiesToShow",
+      "maxAlertsToShow",
       "mainIconSize",
       "forecastIconSize",
       "updateFadeSpeed",
@@ -322,7 +325,8 @@ Module.register("MMM-NOAAForecast", {
       latitude: this.config.latitude,
       longitude: this.config.longitude,
       instanceId: this.identifier,
-      requestDelay: this.config.requestDelay
+      requestDelay: this.config.requestDelay,
+      showAlerts: this.config.showAlerts
     });
   },
 
@@ -356,6 +360,27 @@ Module.register("MMM-NOAAForecast", {
           ? JSON.parse(payload.payload.observation)
           : payload.payload.observation;
 
+      var parsedAlerts = null;
+      if (payload.payload && payload.payload.alerts) {
+        try {
+          parsedAlerts =
+            typeof payload.payload.alerts === "string"
+              ? JSON.parse(payload.payload.alerts)
+              : payload.payload.alerts;
+        } catch (e) {
+          parsedAlerts = null;
+        }
+      }
+
+      var rawAlerts = [];
+      if (parsedAlerts) {
+        if (Array.isArray(parsedAlerts.features)) {
+          rawAlerts = parsedAlerts.features;
+        } else if (Array.isArray(parsedAlerts)) {
+          rawAlerts = parsedAlerts;
+        }
+      }
+
       var observationTime =
         parsedObservation &&
         parsedObservation.properties &&
@@ -385,6 +410,7 @@ Module.register("MMM-NOAAForecast", {
         daily: parsedForecast ? parsedForecast.properties.periods : [],
         hourly: parsedHourly ? parsedHourly.properties.periods : [],
         grid: parsedGrid ? parsedGrid.properties : {},
+        alerts: rawAlerts,
         updateTime: updateTime,
         generatedAt: generatedAt,
         observationTime: observationTime,
@@ -1305,6 +1331,58 @@ Module.register("MMM-NOAAForecast", {
       }
     }
 
+    // Weather Alerts
+    var alerts = [];
+    if (
+      this.config.showAlerts &&
+      this.weatherData &&
+      Array.isArray(this.weatherData.alerts)
+    ) {
+      var seenAlerts = new Set();
+      for (var a = 0; a < this.weatherData.alerts.length; a++) {
+        var alertItem = this.weatherData.alerts[a];
+        if (!alertItem) {
+          continue;
+        }
+        var p = alertItem.properties || alertItem;
+        var eventName = p.event || "Weather Alert";
+        var desc = (p.description || p.headline || "").trim();
+        var senderName = p.senderName || p.sender_name || p.sender || "NWS";
+        var alertKey = (
+          alertItem.id ||
+          p.id ||
+          eventName + "_" + desc
+        ).toString();
+
+        if (seenAlerts.has(alertKey)) {
+          continue;
+        }
+        seenAlerts.add(alertKey);
+
+        alerts.push({
+          event: eventName,
+          description: desc,
+          sender_name: senderName,
+          senderName: senderName,
+          headline: (p.headline || "").trim(),
+          severity: p.severity || null,
+          urgency: p.urgency || null,
+          certainty: p.certainty || null,
+          instruction: (p.instruction || "").trim(),
+          onset: p.onset || null,
+          expires: p.expires || null,
+          ends: p.ends || null
+        });
+
+        if (
+          this.config.maxAlertsToShow > 0 &&
+          alerts.length >= this.config.maxAlertsToShow
+        ) {
+          break;
+        }
+      }
+    }
+
     return {
       currently: {
         temperature: `${Math.round(this.weatherData.hourly[0].temperature)}°`,
@@ -1345,6 +1423,7 @@ Module.register("MMM-NOAAForecast", {
       precipitationChange: precipitationChange,
       hourly: hourlies,
       daily: dailies,
+      alerts: alerts,
       currentConditionsLastUpdate: currentConditionsUpdateFormatted,
       forecastLastUpdate: forecastUpdateFormatted,
       lastUpdate: forecastUpdateFormatted

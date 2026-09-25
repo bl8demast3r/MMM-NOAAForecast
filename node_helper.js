@@ -64,6 +64,13 @@ module.exports = NodeHelper.create({
                 { key: "forecastGridData", url: properties.forecastGridData }
               ];
 
+              if (payload.showAlerts !== false) {
+                forecastUrls.push({
+                  key: "alerts",
+                  url: `https://api.weather.gov/alerts/active?point=${payload.latitude},${payload.longitude}`
+                });
+              }
+
               var totalRequests = forecastUrls.length + (properties.observationStations ? 1 : 0);
               var completedRequests = 0;
 

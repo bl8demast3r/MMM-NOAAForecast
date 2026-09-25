@@ -101,6 +101,14 @@ Find out your latitude and longitude here:
       <td>Whether to show the forecast summary.<br><br><strong>Type</strong> <code>Boolean</code><br>Defaults to <code>true</code></td>
     </tr>
     <tr>
+      <td><code>showAlerts</code></td>
+      <td>Whether to show active weather alerts/advisories.<br><br><strong>Type</strong> <code>Boolean</code><br>Defaults to <code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>maxAlertsToShow</code></td>
+      <td>Maximum number of active alerts to display (set to <code>0</code> to display all active alerts).<br><br><strong>Type</strong> <code>Number</code><br>Defaults to <code>0</code></td>
+    </tr>
+    <tr>
       <td><code>forecastHeaderText</code></td>
       <td>Show a header above the forecast display.<br><br><strong>Type</strong> <code>String</code><br>Defaults to <code>""</code></td>
     </tr>
